@@ -1,10 +1,11 @@
+import os
 from app.pdf_processor import extract_text_from_pdf
 from app.chunker import chunk_pages
 from app.embeddings import embed_texts
 import app.vector_store as vector_store
 
-
 pdf_path = "data/uploads/computer_networks_ass2.pdf"
+
 
 pages = extract_text_from_pdf(pdf_path)
 chunks = chunk_pages(pages)
@@ -16,16 +17,25 @@ embeddings = embed_texts(texts)
 vector_store.add_embeddings(embeddings)
 index_path = "data/vectorstore/index.faiss"
 
+chunks_path = "data/vectorstore/chunks.json"
+
 vector_store.save_index(index_path)
+vector_store.save_chunks(chunks, chunks_path)
+
+print("Chunks saved:", os.path.exists(chunks_path))
 
 vector_store.load_index(index_path)
+
+loaded_chunks = vector_store.load_chunks(chunks_path)
+
+print("Chunks after loading:", len(loaded_chunks))
 
 print("Vectors after loading:", vector_store.index.ntotal)
 
 
 query = "What is Hamming code used for?"
 
-results = vector_store.retrieve(query, chunks, k=3)
+results = vector_store.retrieve(query, loaded_chunks, k=3)
 
 
 print("Query:", query)

@@ -1,2 +1,5 @@
 PyMuPDF==1.28.2
 sentence-transformers==6.0.1
+faiss-cpu==1.15.0
+python-dotenv==1.2.3
+google-genai==2.22.0
