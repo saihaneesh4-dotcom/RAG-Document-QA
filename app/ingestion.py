@@ -7,14 +7,30 @@ from app.chunker import chunk_pages
 from app.embeddings import embed_texts
 
 
-def process_document(pdf_path):
-    pages = extract_text_from_pdf(pdf_path)
-    chunks = chunk_pages(pages)
+def process_documents(pdf_paths):
+    all_chunks = []
+    chunk_id = 0
 
-    texts = [chunk["text"] for chunk in chunks]
+    for pdf_path in pdf_paths:
+
+        pages = extract_text_from_pdf(pdf_path)
+        chunks = chunk_pages(pages)
+
+        document_name = os.path.basename(pdf_path)
+
+        for chunk in chunks:
+            chunk["chunk_id"] = chunk_id
+            chunk["document"] = document_name
+
+            all_chunks.append(chunk)
+
+            chunk_id += 1
+
+    texts = [chunk["text"] for chunk in all_chunks]
+
     embeddings = embed_texts(texts)
 
-    # Create a fresh index for the new document
+    # Create a fresh index for all processed documents
     vector_store.index = vector_store.faiss.IndexFlatIP(
         embeddings.shape[1]
     )
@@ -27,6 +43,6 @@ def process_document(pdf_path):
     chunks_path = "data/vectorstore/chunks.json"
 
     vector_store.save_index(index_path)
-    vector_store.save_chunks(chunks, chunks_path)
+    vector_store.save_chunks(all_chunks, chunks_path)
 
-    return chunks
+    return all_chunks
