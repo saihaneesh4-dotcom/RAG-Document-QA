@@ -1,40 +1,42 @@
-from app.pdf_processor import extract_text_from_pdf
-from app.chunker import chunk_pages
-from app.embeddings import embed_texts
-from app.vector_store import add_embeddings, retrieve, index
+import app.vector_store as vector_store
+from app.rag import answer_question
 
 
-pdf_path = "data/uploads/computer_networks_ass2.pdf"
+index_path = "data/vectorstore/index.faiss"
+chunks_path = "data/vectorstore/chunks.json"
 
 
-# 1. Extract text from PDF
-pages = extract_text_from_pdf(pdf_path)
-
-# 2. Split extracted text into chunks
-chunks = chunk_pages(pages)
-
-# 3. Create embeddings for all chunks
-texts = [chunk["text"] for chunk in chunks]
-embeddings = embed_texts(texts)
-
-# 4. Add embeddings to FAISS
-add_embeddings(embeddings)
+# Load the existing vector store
+vector_store.load_index(index_path)
+chunks = vector_store.load_chunks(chunks_path)
 
 
-# 5. Ask a question
-query = "What is Hamming code used for?"
-
-# 6. Retrieve the most relevant chunks
-results = retrieve(query, chunks, k=3)
+# Ask a question
+question = input("Enter your question: ")
 
 
-# 7. Display the retrieved results
-print("Query:", query)
+# Generate an answer using RAG
+result = answer_question(question, chunks, k=3)
 
-for result in results:
-    print("\nScore:", result["score"])
-    print("Chunk ID:", result["chunk"]["chunk_id"])
-    print("Page:", result["chunk"]["page"])
-    print("Text:", result["chunk"]["text"][:300])
 
-print("\nTotal vectors in FAISS:", index.ntotal)
+print("\nAnswer:")
+print(result["answer"])
+
+
+print("\nSources:")
+
+for source in result["sources"]:
+    chunk = source["chunk"]
+
+    start_page = chunk["page"]
+    end_page = chunk.get("end_page", start_page)
+
+    if start_page == end_page:
+        page_label = f"Page {start_page}"
+    else:
+        page_label = f"Pages {start_page}-{end_page}"
+
+    print(
+        f"{page_label} "
+        f"(Score: {source['score']:.4f})"
+    )

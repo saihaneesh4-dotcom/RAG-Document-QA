@@ -1,5 +1,4 @@
 import faiss
-import os
 import json
 
 dimension = 384
