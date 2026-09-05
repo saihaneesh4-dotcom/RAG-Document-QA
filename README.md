@@ -1,144 +1,152 @@
-````markdown
 # RAG Document QA System
 
-A Retrieval-Augmented Generation (RAG) based document question-answering system that allows users to ask questions about PDF documents and receive answers grounded in the retrieved document content.
+A Retrieval-Augmented Generation (RAG) based document question-answering system that allows users to upload PDF documents, ask natural-language questions, and receive answers grounded in the retrieved document content.
+
+The system combines semantic retrieval, Cross-Encoder reranking, and Gemini-based answer generation to improve the relevance and reliability of document-grounded answers.
 
 ## Overview
 
-This project implements a complete RAG pipeline for answering questions from PDF documents.
+The system implements a complete RAG pipeline:
 
-Instead of sending the entire document to a language model, the system:
-
-1. Extracts text from the PDF.
-2. Splits the document into meaningful chunks.
-3. Converts the chunks into vector embeddings.
-4. Stores the embeddings in a FAISS vector index.
-5. Retrieves relevant candidate chunks for a user question.
-6. Reranks the retrieved chunks using a Cross-Encoder.
-7. Sends the best matching chunks to Gemini.
-8. Generates an answer using the retrieved document context.
-9. Displays the source pages used for the answer.
+1. Upload PDF documents.
+2. Extract text using PyMuPDF.
+3. Split extracted content into structure-aware chunks.
+4. Generate vector embeddings using Sentence Transformers.
+5. Store embeddings in a FAISS vector index.
+6. Retrieve the top 20 candidate chunks using dense semantic search.
+7. Rerank the candidates using a Cross-Encoder.
+8. Select the top 3 relevant chunks.
+9. Provide the retrieved context to Gemini.
+10. Generate a grounded answer.
+11. Display the source document and page numbers.
 
 ## Architecture
 
 ```text
-                 PDF Document
-                      │
-                      ▼
-              Text Extraction
-                      │
-                      ▼
-             Structure-Aware Chunking
-                      │
-                      ▼
-              Sentence Transformer
+                 PDF Documents
+                       |
+                       v
+                Text Extraction
+                   (PyMuPDF)
+                       |
+                       v
+          Structure-Aware Chunking
+                       |
+                       v
+             Sentence Transformer
               (all-MiniLM-L6-v2)
-                      │
-                      ▼
+                       |
+                       v
                 Vector Embeddings
-                      │
-                      ▼
-                  FAISS Index
-                      │
-                      │
-                User Question
-                      │
-                      ▼
+                       |
+                       v
+                     FAISS
+                       |
+                       |
+                 User Question
+                       |
+                       v
                 Query Embedding
-                      │
-                      ▼
-              Dense Retrieval (Top 20)
-                      │
-                      ▼
+                       |
+                       v
+            Dense Retrieval - Top 20
+                       |
+                       v
              Cross-Encoder Reranking
-                      │
-                      ▼
-                  Top 3 Chunks
-                      │
-                      ▼
+                       |
+                       v
+                 Top 3 Chunks
+                       |
+                       v
                     Gemini
-                      │
-                      ▼
+                       |
+                       v
                 Grounded Answer
-                      │
-                      ▼
-                  Source Pages
-````
+                       |
+                       v
+           Source Document + Pages
+```
 
 ## Key Features
 
-* PDF text extraction using PyMuPDF
-* Structure-aware document chunking
-* Semantic vector embeddings
-* FAISS-based similarity search
-* Cross-Encoder reranking
-* Grounded answer generation using Gemini
-* Source page reporting
-* Retrieval evaluation
-* Local vector storage
+- Multiple PDF document upload and processing in a single session
+- PDF text extraction using PyMuPDF
+- Structure-aware chunking
+- Semantic vector embeddings
+- FAISS similarity search
+- Dense retrieval
+- Cross-Encoder reranking
+- Grounded Gemini answer generation
+- Source document and page reporting
+- Retrieval evaluation
+- Streamlit web interface
+- Local vector-store persistence
+- Deployed using Streamlit Community Cloud
 
 ## Technologies Used
 
-| Technology            | Purpose                         |
-| --------------------- | ------------------------------- |
-| Python                | Core programming language       |
-| PyMuPDF               | PDF text extraction             |
-| Sentence Transformers | Text embeddings                 |
-| all-MiniLM-L6-v2      | Embedding model                 |
-| FAISS                 | Vector similarity search        |
-| Cross-Encoder         | Retrieval reranking             |
-| Gemini                | Answer generation               |
-| python-dotenv         | Environment variable management |
+| Technology | Purpose |
+|---|---|
+| Python | Core programming language |
+| PyMuPDF | PDF text extraction |
+| Sentence Transformers | Text embeddings |
+| all-MiniLM-L6-v2 | Embedding model |
+| FAISS | Vector similarity search |
+| Cross-Encoder | Retrieval reranking |
+| Gemini | Grounded answer generation |
+| python-dotenv | Environment variable management |
+| Streamlit | Web application interface |
 
 ## Project Structure
 
 ```text
 RAG-Document-QA/
-│
-├── app/
-│   ├── __init__.py
-│   ├── chunker.py
-│   ├── embeddings.py
-│   ├── ingestion.py
-│   ├── llm.py
-│   ├── main.py
-│   ├── pdf_processor.py
-│   ├── rag.py
-│   └── vector_store.py
-│
-├── data/
-│   ├── uploads/
-│   │   └── PDF documents
-│   │
-│   └── vectorstore/
-│       ├── chunks.json
-│       └── index.faiss
-│
-├── experiments/
-│   ├── compare_retrieval.py
-│   ├── inspect_failures.py
-│   ├── test_bm25.py
-│   ├── test_hybrid.py
-│   ├── test_ingestion.py
-│   ├── test_llm.py
-│   ├── test_query_expansion.py
-│   ├── test_rag.py
-│   └── test_retrieval.py
-│
-├── tests/
-│   ├── __init__.py
-│   ├── rebuild_vectorstore.py
-│   ├── test_chunking.py
-│   ├── test_embeddings.py
-│   ├── test_new_questions.py
-│   ├── test_pdf.py
-│   ├── test_reranker.py
-│   └── test_vector_store.py
-│
-├── .env
-├── .gitignore
-├── README.md
-└── requirements.txt
+|
++-- app/
+|   +-- __init__.py
+|   +-- chunker.py
+|   +-- embeddings.py
+|   +-- ingestion.py
+|   +-- llm.py
+|   +-- main.py
+|   +-- pdf_processor.py
+|   +-- rag.py
+|   +-- vector_store.py
+|
++-- data/
+|   +-- uploads/
+|   |   +-- PDF documents
+|   |
+|   +-- vectorstore/
+|       +-- chunks.json
+|       +-- index.faiss
+|
++-- experiments/
+|   +-- compare_retrieval.py
+|   +-- inspect_failures.py
+|   +-- test_bm25.py
+|   +-- test_hybrid.py
+|   +-- test_ingestion.py
+|   +-- test_llm.py
+|   +-- test_query_expansion.py
+|   +-- test_rag.py
+|   +-- test_retrieval.py
+|
++-- tests/
+|   +-- __init__.py
+|   +-- rebuild_vectorstore.py
+|   +-- test_chunking.py
+|   +-- test_embeddings.py
+|   +-- test_multidoc_retrieval.py
+|   +-- test_new_questions.py
+|   +-- test_pdf.py
+|   +-- test_reranker.py
+|   +-- test_vector_store.py
+|
++-- .gitignore
++-- README.md
++-- requirements.txt
++-- streamlit_app.py
 ```
 
 ## Installation
@@ -146,11 +154,11 @@ RAG-Document-QA/
 Clone the repository:
 
 ```powershell
-git clone <repository-url>
+git clone https://github.com/saihaneesh4-dotcom/RAG-Document-QA.git
 cd RAG-Document-QA
 ```
 
-Create and activate the virtual environment:
+Create and activate a virtual environment:
 
 ```powershell
 python -m venv .venv
@@ -171,164 +179,212 @@ Create a `.env` file in the project root:
 GEMINI_API_KEY=your_gemini_api_key
 ```
 
-The `.env` file contains the API key and should not be committed to Git.
+The `.env` file contains the API key and is excluded from Git using `.gitignore`.
 
 ## Running the Application
 
-The current vector store can be queried using:
+The main user interface is the Streamlit application.
+
+Run:
+
+```powershell
+streamlit run streamlit_app.py
+```
+
+The application allows users to:
+
+- Upload one or more PDF documents.
+- Process the uploaded documents.
+- Ask questions about their contents.
+- View generated answers.
+- View the source document and page numbers used for the answer.
+
+A command-line interface is also available for querying the system:
 
 ```powershell
 python -m app.main
 ```
 
-The system will prompt:
+## Document Processing
+
+The ingestion pipeline processes multiple PDF documents together.
 
 ```text
-Enter your question:
-```
-
-For example:
-
-```text
-What are the five interrupt sources in the 8051?
-```
-
-The system returns the generated answer along with the source pages used to answer the question.
-
-## Processing Documents
-
-The document ingestion pipeline follows these steps:
-
-```text
-PDF
- ↓
+PDF Documents
+      |
+      v
 Text Extraction
- ↓
+      |
+      v
 Structure-Aware Chunking
- ↓
+      |
+      v
 Embedding Generation
- ↓
+      |
+      v
 FAISS Index Creation
- ↓
+      |
+      v
 Chunk Metadata Storage
 ```
 
-The generated vector store is stored in:
+Each chunk stores metadata including:
+
+- Chunk ID
+- Source document
+- Starting page
+- Ending page
+- Chunk text
+
+The vector store consists of:
 
 ```text
 data/vectorstore/
++-- index.faiss
++-- chunks.json
 ```
 
-The vector store is rebuilt for the currently processed document so that the FAISS index and chunk metadata remain aligned.
+The FAISS index and chunk metadata are generated together so that vector positions remain aligned with their corresponding chunks.
 
 ## Retrieval Pipeline
 
-The retrieval process consists of two stages.
+The retrieval system uses two stages.
 
 ### 1. Dense Retrieval
 
-The user's question is converted into an embedding using:
+The user's question is converted into an embedding using `all-MiniLM-L6-v2`.
 
-`all-MiniLM-L6-v2`
+FAISS performs similarity search using an `IndexFlatIP` index and retrieves the top 20 candidate chunks.
 
-FAISS then retrieves the top 20 candidate chunks based on vector similarity.
+The embeddings are normalized before indexing, which allows inner-product similarity to correspond to cosine similarity.
 
 ### 2. Cross-Encoder Reranking
 
-The 20 retrieved candidates are passed to a Cross-Encoder:
+The 20 retrieved candidates are passed to `cross-encoder/ms-marco-MiniLM-L-6-v2`.
 
-`cross-encoder/ms-marco-MiniLM-L-6-v2`
+The Cross-Encoder evaluates the question and each candidate passage together and produces a relevance score for reranking. FAISS is not involved in this step, and the Cross-Encoder does not perform retrieval on its own; it only reorders the candidates that dense retrieval already returned.
 
-The Cross-Encoder evaluates the question and each candidate chunk together and reorders the candidates according to their relevance.
+The candidates are then reordered according to this relevance score, and the top 3 chunks are passed to Gemini as the document context.
 
-The top 3 chunks are then passed to Gemini.
+The source score shown in the application UI reflects the dense FAISS retrieval result. Cross-Encoder scores are used internally for reranking and are not displayed as the source score.
+
+## Answer Generation
+
+Gemini (`gemini-3.5-flash-lite`) generates the final response using only the retrieved document context.
+
+The prompt instructs the model to:
+
+- Answer using the provided context.
+- Avoid inventing information.
+- State when the answer cannot be found in the retrieved context.
+
+This acts as a grounding and guardrail mechanism that helps keep responses grounded in the retrieved document context. It does not guarantee that every answer will be fully accurate.
 
 ## Evaluation
 
-The retrieval system was evaluated using an unseen set of questions covering different sections of the document.
+The retrieval system was evaluated using a set of unseen questions covering different sections of the source documents.
 
 ### Dense Retrieval
 
-| Metric    | Result |
-| --------- | -----: |
-| Recall@3  | 64.29% |
-| Recall@5  | 78.57% |
-| Recall@10 |   100% |
-| MRR       | 0.5716 |
+| Metric | Result |
+|---|---|
+| Recall@3 | 64.29% |
+| Recall@5 | 78.57% |
+| Recall@10 | 100% |
+| MRR | 0.5716 |
 
 ### Dense Retrieval + Cross-Encoder
 
-| Metric    | Result |
-| --------- | -----: |
-| Recall@3  | 85.71% |
-| Recall@5  | 92.86% |
+| Metric | Result |
+|---|---|
+| Recall@3 | 85.71% |
+| Recall@5 | 92.86% |
 | Recall@10 | 92.86% |
-| MRR       | 0.7128 |
+| MRR | 0.7128 |
 
-The results show that Cross-Encoder reranking substantially improved the ordering of relevant chunks, particularly for questions where dense retrieval initially placed the relevant information lower in the candidate list.
+Cross-Encoder reranking substantially improved the ranking of relevant chunks, particularly in cases where dense retrieval initially placed relevant information lower in the candidate list.
 
 ## Design Decisions
 
 ### Structure-Aware Chunking
 
-Some sections in the source document continue onto the following page. When a page begins with `Cont.`, it is combined with the previous page before chunking.
+Some sections in the source documents continue onto the following page. If the text extracted from the next page starts with `Cont.`, that page is combined with the current page before chunking. This keeps content belonging to the same section together instead of splitting it across separate chunks. This is a simple, rule-based heuristic rather than a semantic segmentation method.
 
-This helps keep information belonging to the same section together.
+### Why FAISS with IndexFlatIP?
 
-### Why FAISS?
-
-The current document collection is relatively small, so an exact FAISS inner-product index is sufficient.
-
-The embeddings are normalized, making inner product equivalent to cosine similarity for the retrieval step.
+The document collection used for this project is relatively small, so an exact `IndexFlatIP` index is sufficient and avoids the added complexity of approximate nearest-neighbor indexing. Because the embeddings are normalized, inner-product similarity computed by FAISS is equivalent to cosine similarity for the retrieval step. This is not intended as a large-scale production vector database.
 
 ### Why Reranking?
 
-Dense retrieval is useful for quickly finding a candidate set, but the initial ordering is not always optimal.
-
-A Cross-Encoder evaluates the question and candidate passage together, allowing more detailed relevance scoring.
+Dense retrieval provides an efficient way to find a candidate set, but semantic similarity alone does not always produce the ideal ranking. The Cross-Encoder evaluates the question and each candidate passage jointly, allowing more detailed relevance scoring before the final context is sent to Gemini.
 
 ## Current Limitations
 
-* The current PDF processor extracts text but does not perform OCR.
-* Scanned or image-only PDFs may therefore produce little or no searchable text.
-* The current vector store represents one processed document at a time.
-* The system currently uses a command-line interface.
-* Gemini is required for answer generation.
+- The PDF processor extracts text but does not perform OCR.
+- Scanned or image-only PDFs may produce little or no searchable text.
+- Image and table understanding is not currently implemented.
+- The system relies on Gemini for answer generation.
+- Retrieval quality depends on the quality of the extracted text and chunking.
 
 ## Future Improvements
 
 Possible future improvements include:
 
-* OCR support for scanned PDFs
-* Image and table understanding
-* Multi-document vector stores
-* Document metadata and filtering
-* Improved chunking strategies
-* Conversation history
-* Web-based user interface
-* More extensive retrieval evaluation
+- OCR support for scanned PDFs
+- Image and table understanding
+- Document metadata filtering
+- Improved chunking strategies
+- Conversation history
+- Additional retrieval strategies
+- Larger-scale vector indexing
+- More extensive evaluation and observability
 
 ## Example
 
-### Question
+**Question**
 
-```text
 What are the five interrupt sources in the 8051?
-```
 
-### Answer
+**Retrieved Information**
 
-The system retrieves the relevant section from the document and generates an answer containing:
+The system retrieves the relevant section covering the 8051 interrupt sources.
+
+**Answer**
+
+The five interrupt sources are:
+
+1. INT0
+2. INT1
+3. TF0
+4. TF1
+5. TI/RI
+
+The generated answer is accompanied by the relevant source document and page numbers.
+
+## Deployment
+
+The Streamlit application is deployed using Streamlit Community Cloud.
+
+The application can be accessed at:
+
+<https://rag-document-app-n7qdu6w5dxhgx6pgvcq89g.streamlit.app>
+
+The Gemini API key is configured through the deployment's secrets configuration rather than being stored in the GitHub repository.
+
+## Security
+
+API keys and local environment files are excluded from version control.
+
+The following files and directories are ignored:
 
 ```text
-INT0'
-INT1'
-TF0
-TF1
-TI/RI
+.env
+.venv/
+data/uploads/
+data/vectorstore/
+__pycache__/
+*.pyc
 ```
-
-The answer is accompanied by the relevant source pages.
 
 ## License
 
